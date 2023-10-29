@@ -7,16 +7,16 @@ import java.util.List;
 public class DeviceCollection {
 //    private final int size;
     private int pointer;
-    private final List<Device> devices;
+    private final List<EventHolder> devices;
 
     public DeviceCollection(int size) {
 //        this.size = size;
         this.pointer = 0;
-        this.devices = new ArrayList<>(Collections.nCopies(size, new Device(false, null)));
+        this.devices = new ArrayList<>(Collections.nCopies(size, new EventHolder(false, null)));
     }
 
     public boolean hasFreeDevice() {
-        return devices.stream().filter(Device::isOccupied).count() < devices.size();
+        return devices.stream().filter(EventHolder::isOccupied).count() < devices.size();
     }
 
     public int occupyOneWith(Event request) { // Д2П2 — выбор прибора по кольцу
@@ -28,13 +28,13 @@ public class DeviceCollection {
                     throw new RuntimeException("no free device" + start + " " + pointer + " " + request);
                 }
             } else {
-                devices.set(pointer, new Device(true, request));
+                devices.set(pointer, new EventHolder(true, request));
                 return pointer;
             }
         }
     }
 
     public void freeAt(int i) {
-        devices.set(i, new Device(false, devices.get(i).request()));
+        devices.set(i, new EventHolder(false, devices.get(i).request()));
     }
 }
