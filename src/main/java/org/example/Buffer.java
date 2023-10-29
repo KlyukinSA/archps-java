@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class Buffer {
     private final List<EventHolder> elements;
@@ -42,6 +43,23 @@ public class Buffer {
             if (eventHolder1.isOccupied() && eventHolder1.request().causer() == batchPriority) {
                 elements.set(i, new EventHolder(false, eventHolder1.request()));
                 System.out.println("\t\t\t\t\t\t\t" + eventHolder1.request());
+                return eventHolder1.request();
+            }
+        }
+        return null;
+    }
+
+    public Event reject(Event event) {
+        System.out.println("\t\t\t\t\t\t\t" + event + "\t" + elements.stream().filter(EventHolder::isOccupied).map(EventHolder::request).map(Event::causer).toList());
+        Event max = Stream.concat(elements.stream().filter(EventHolder::isOccupied).map(EventHolder::request), Stream.of(event))
+                .max(Comparator.comparingInt(Event::causer)).get();
+        if (max.equals(event)) {
+            return event;
+        }
+        for (int i = 0; i < elements.size(); i++) {
+            EventHolder eventHolder1 = elements.get(i);
+            if (eventHolder1.isOccupied() && eventHolder1.request().equals(max)) {
+                elements.set(i, new EventHolder(true, event));
                 return eventHolder1.request();
             }
         }

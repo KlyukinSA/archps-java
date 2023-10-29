@@ -6,7 +6,7 @@ import java.util.PriorityQueue;
 public class Main {
     public static void main(String[] args) {
         int sourcesCount = 4;
-        double sourceDelay = 25;
+        double sourceDelay = 250;
 
         int devicesCount = 9;
         double deviceDelay = 1000;
@@ -36,6 +36,8 @@ public class Main {
                     buffer.put(event);
                 } else {
                     System.out.println("reject!");
+                    Event rejected = buffer.reject(event);
+                    System.out.println(rejected);
                 }
             } else {
                 int deviceNumber = event.causer();
