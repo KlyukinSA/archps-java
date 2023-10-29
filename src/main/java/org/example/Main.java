@@ -5,13 +5,13 @@ import java.util.PriorityQueue;
 
 public class Main {
     public static void main(String[] args) {
-        int sourcesCount = 3;
-        double sourceDelay = 1000;
+        int sourcesCount = 4;
+        double sourceDelay = 25;
 
-        int devicesCount = 3;
+        int devicesCount = 9;
         double deviceDelay = 1000;
 
-        int bufferSize = 3;
+        int bufferSize = 9;
 
         DeviceCollection devices = new DeviceCollection(devicesCount);
         Buffer buffer = new Buffer(bufferSize);
@@ -21,7 +21,7 @@ public class Main {
             Event event = queue.poll();
             double t = event.time();
             System.out.println("event " + event);
-            if (t > 100000000) {
+            if (t > 50000) {
                 System.out.println("stop");
                 break;
             } else if (event.type() == EventType.SOURCE) {
