@@ -9,6 +9,7 @@ public class QueuingSystem {
     private Buffer buffer;
     private PriorityQueue<Event> queue;
     private Report report;
+    private double currentTime;
 
     public QueuingSystem(SystemConfiguration configuration, Report report) {
         this.configuration = configuration;
@@ -19,18 +20,22 @@ public class QueuingSystem {
     }
 
     public boolean makeEvent() {
+        if (queue.isEmpty()) {
+            System.out.println("stop");
+            report.register(new Event(currentTime, EventType.END_OF_MODELING, 0), false);
+            return false;
+        }
         Event event = queue.poll();
         double t = event.time();
+        currentTime = t;
         System.out.println("event " + event);
-        if (t > 1000) {
-            System.out.println("stop");
-            report.register(new Event(t, EventType.END_OF_MODELING, 0), false);
-            return false;
-        } else if (event.type() == EventType.SOURCE) {
+        if (event.type() == EventType.SOURCE) {
             int sourceNumber = event.causer();
             System.out.println("accept request from " + sourceNumber);
             report.register(event, true);
-            queue.add(new Event(t + configuration.sourceDelay, EventType.SOURCE, sourceNumber)); // ИЗ2 — равномерный закон распределения
+            if (t < 500) {
+                queue.add(new Event(t + configuration.sourceDelay, EventType.SOURCE, sourceNumber)); // ИЗ2 — равномерный закон распределения
+            }
             if (devices.hasFreeDevice()) {
                 System.out.println("immediately occupy the device");
                 occupyDevice(devices, event, queue, t);
