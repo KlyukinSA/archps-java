@@ -24,7 +24,7 @@ public class Main extends Application {
     public void start(Stage stage) {
         ObservableList<CalendarRow> people = FXCollections.observableArrayList();
         SystemConfiguration configuration = new SystemConfiguration();
-        Report report = new Report(configuration.bufferSize, people);
+        Report report = new Report(configuration.bufferSize, configuration.devicesCount, people);
         QueuingSystem system = new QueuingSystem(configuration, report);
 
         Button stepButton = new Button("make event step");
@@ -41,6 +41,13 @@ public class Main extends Application {
             alert.setHeaderText(null);
             alert.setContentText("see reports in csv files in current dir");
             alert.showAndWait();
+            reportButton.setVisible(false);
+        });
+
+        Button runButton = new Button("run the simulation to completion");
+        runButton.setOnAction((e) -> {
+            stepButton.setVisible(false);
+            while (system.makeEvent()) {}
         });
 
         TableView<CalendarRow> table = new TableView<>(people);
@@ -62,7 +69,7 @@ public class Main extends Application {
         rejectsCountCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getRejectsCount()));
         table.getColumns().add(rejectsCountCol);
 
-        FlowPane root = new FlowPane(table, stepButton, reportButton);
+        FlowPane root = new FlowPane(table, stepButton, reportButton, runButton);
 
         Scene scene = new Scene(root, 3000, 3000);
 

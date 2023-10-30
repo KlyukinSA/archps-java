@@ -12,10 +12,12 @@ public class Report {
     private int requestsCount;
     private int rejectsCount;
     private final BufferedWriter calendarWriter;
-    private List<ReportBufferElement> buffer;
-    private List<CalendarRow> calendarRows;
+    private final List<ReportBufferElement> buffer;
+    private final List<CalendarRow> calendarRows;
+    private final List<Double> devices;
+    private double endTime;
 
-    public Report(int bufferSize, List<CalendarRow> calendarRows) {
+    public Report(int bufferSize, int devicesCount, List<CalendarRow> calendarRows) {
         this.requestsCount = 0;
         this.rejectsCount = 0;
         try {
@@ -27,12 +29,16 @@ public class Report {
         this.buffer = new ArrayList<>(Collections.nCopies(bufferSize,
                 new ReportBufferElement(0, 0, 0)));
         this.calendarRows = calendarRows;
+        this.devices = new ArrayList<>(Collections.nCopies(devicesCount, .0));
     }
 
     public void register(Event event, boolean nextEventIsKnown) { // ОД1 — календарь событий, буфер и текущее состояние
         if (event.type() == EventType.SOURCE) {
             requestsCount++;
+        } else if (event.type() == EventType.END_OF_MODELING) {
+            endTime = event.time();
         }
+
         String causer = event.type().toString();
         if (event.type() != EventType.END_OF_MODELING) {
             causer += event.causer();
@@ -60,6 +66,21 @@ public class Report {
             throw new RuntimeException(e);
         }
         createBufferReport();
+        createDevicesReport();
+    }
+
+    private void createDevicesReport() {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("devices.csv"));
+            writer.write("deviceNumber,usageRate\n");
+            for (int i = 0; i < buffer.size(); i++) {
+                List<String> list = Arrays.asList(String.valueOf(i + 1), String.valueOf(devices.get(i) / endTime));
+                writer.write(String.join(",", list) + "\n");
+            }
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void createBufferReport() {
@@ -79,5 +100,10 @@ public class Report {
 
     public void updateBuffer(int pos, Event event) {
         buffer.set(pos, new ReportBufferElement(event.time(), event.causer(), requestsCount));
+    }
+
+    public void addTimeToDevice(int dev, double delay) {
+        Double time = devices.get(dev);
+        devices.set(dev, time + delay);
     }
 }

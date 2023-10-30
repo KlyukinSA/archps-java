@@ -72,7 +72,9 @@ public class QueuingSystem {
 
     private void occupyDevice(DeviceCollection devices, Event request, PriorityQueue<Event> queue, double t) {
         int dev = devices.occupyOneWith(request);
-        queue.add(new Event(t + getNextDelay(configuration.deviceDelay), EventType.DEVICE, dev)); // ПЗ1 — экспоненциальный закон распределения времени обслуживания
+        double delay = getNextDelay(configuration.deviceDelay);
+        report.addTimeToDevice(dev, delay);
+        queue.add(new Event(t + delay, EventType.DEVICE, dev)); // ПЗ1 — экспоненциальный закон распределения времени обслуживания
     }
 
     private double getNextDelay(double average) {
