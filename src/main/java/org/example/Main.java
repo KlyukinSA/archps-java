@@ -5,6 +5,7 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.FlowPane;
@@ -24,10 +25,14 @@ public class Main extends Application {
         SystemConfiguration configuration = new SystemConfiguration();
         Report report = new Report(configuration.bufferSize, people);
         QueuingSystem system = new QueuingSystem(configuration, report);
-        while (system.makeEvent()) { }
-        report.close();
+//        while (system.makeEvent()) { }
+//        report.close();
+
+        Button stepButton = new Button("step");
+        stepButton.setOnAction((e) -> system.makeEvent());
 
         TableView<CalendarRow> table = new TableView<>(people);
+        table.setPrefSize(700, 500);
 
         TableColumn<CalendarRow, String> causerCol = new TableColumn<>("causer");
         causerCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getCauser()));
@@ -45,7 +50,7 @@ public class Main extends Application {
         rejectsCountCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getRejectsCount()));
         table.getColumns().add(rejectsCountCol);
 
-        FlowPane root = new FlowPane(table);
+        FlowPane root = new FlowPane(table, stepButton);
 
         Scene scene = new Scene(root, 3000, 3000);
 
