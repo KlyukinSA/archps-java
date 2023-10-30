@@ -19,13 +19,14 @@ public class Buffer {
         return elements.stream().filter(EventHolder::isOccupied).count() < elements.size();
     }
 
-    public void put(Event request) { // Д10З3 — на свободное место
+    public int put(Event request) { // Д10З3 — на свободное место
         for (int i = 0; i < elements.size(); i++) {
             if (!elements.get(i).isOccupied()) {
                 elements.set(i, new EventHolder(true, request));
-                break;
+                return i;
             }
         }
+        return 0;
     }
 
     public boolean hasRequest() {

@@ -17,7 +17,7 @@ public class Main {
         Buffer buffer = new Buffer(bufferSize);
         PriorityQueue<Event> queue = initQueue(sourcesCount, sourceDelay);
 
-        Report report = new Report();
+        Report report = new Report(bufferSize);
 
         while (true) {
             Event event = queue.poll();
@@ -37,7 +37,8 @@ public class Main {
                     occupyDevice(devices, event, queue, t, deviceDelay);
                 } else if (buffer.hasPlace()) {
                     System.out.println("occupy buffer");
-                    buffer.put(event);
+                    int pos = buffer.put(event);
+                    report.updateBuffer(pos, event);
                 } else {
                     System.out.println("reject!");
                     report.markReject();
