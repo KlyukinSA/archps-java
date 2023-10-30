@@ -5,6 +5,7 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -25,11 +26,22 @@ public class Main extends Application {
         SystemConfiguration configuration = new SystemConfiguration();
         Report report = new Report(configuration.bufferSize, people);
         QueuingSystem system = new QueuingSystem(configuration, report);
-//        while (system.makeEvent()) { }
-//        report.close();
 
-        Button stepButton = new Button("step");
+        Button stepButton = new Button("make event step");
         stepButton.setOnAction((e) -> system.makeEvent());
+
+        Button reportButton = new Button("save reports");
+        reportButton.setOnAction((e) -> {
+            report.close();
+
+            stepButton.setVisible(false);
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Information Dialog");
+            alert.setHeaderText(null);
+            alert.setContentText("see reports in csv files in current dir");
+            alert.showAndWait();
+        });
 
         TableView<CalendarRow> table = new TableView<>(people);
         table.setPrefSize(700, 500);
@@ -50,7 +62,7 @@ public class Main extends Application {
         rejectsCountCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getRejectsCount()));
         table.getColumns().add(rejectsCountCol);
 
-        FlowPane root = new FlowPane(table, stepButton);
+        FlowPane root = new FlowPane(table, stepButton, reportButton);
 
         Scene scene = new Scene(root, 3000, 3000);
 
