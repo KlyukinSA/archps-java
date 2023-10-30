@@ -46,18 +46,19 @@ public class Main {
                     System.out.println(rejected);
                 }
             } else {
+                assert event.type() == EventType.DEVICE;
                 int deviceNumber = event.causer();
                 System.out.println("free device " + deviceNumber);
                 devices.freeAt(deviceNumber);
-                boolean nextReleaseIsKnown = false;
+                boolean nextDeviceReleaseTimeIsKnown = false;
                 if (buffer.hasRequest()) {
                     System.out.println("take new request from buffer");
                     Event request = buffer.takeRequest();
                     System.out.println("occupy this device with this request");
                     occupyDevice(devices, request, queue, t, deviceDelay);
-                    nextReleaseIsKnown = true;
+                    nextDeviceReleaseTimeIsKnown = true;
                 }
-                report.register(new Event(t, EventType.DEVICE, deviceNumber), nextReleaseIsKnown);
+                report.register(event, nextDeviceReleaseTimeIsKnown);
             }
         }
         report.close();
