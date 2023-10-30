@@ -5,28 +5,32 @@ import java.util.PriorityQueue;
 
 public class Main {
     public static void main(String[] args) {
-        int sourcesCount = 4;
+        int sourcesCount = 6;
         double sourceDelay = 250;
 
-        int devicesCount = 9;
-        double deviceDelay = 1000;
+        int devicesCount = 3;
+        double deviceDelay = 250;
 
-        int bufferSize = 9;
+        int bufferSize = 3;
 
         DeviceCollection devices = new DeviceCollection(devicesCount);
         Buffer buffer = new Buffer(bufferSize);
         PriorityQueue<Event> queue = initQueue(sourcesCount, sourceDelay);
 
+        Report report = new Report();
+
         while (true) {
             Event event = queue.poll();
             double t = event.time();
             System.out.println("event " + event);
-            if (t > 50000) {
+            if (t > 1000) {
                 System.out.println("stop");
+                report.register(new Event(t, EventType.END_OF_MODELING, 0), false);
                 break;
             } else if (event.type() == EventType.SOURCE) {
                 int sourceNumber = event.causer();
                 System.out.println("accept request from " + sourceNumber);
+                report.register(event, true);
                 queue.add(new Event(t + sourceDelay, EventType.SOURCE, sourceNumber)); // ИЗ2 — равномерный закон распределения
                 if (devices.hasFreeDevice()) {
                     System.out.println("immediately occupy the device");
@@ -36,6 +40,7 @@ public class Main {
                     buffer.put(event);
                 } else {
                     System.out.println("reject!");
+                    report.markReject();
                     Event rejected = buffer.reject(event);
                     System.out.println(rejected);
                 }
@@ -43,14 +48,18 @@ public class Main {
                 int deviceNumber = event.causer();
                 System.out.println("free device " + deviceNumber);
                 devices.freeAt(deviceNumber);
+                boolean nextReleaseIsKnown = false;
                 if (buffer.hasRequest()) {
                     System.out.println("take new request from buffer");
                     Event request = buffer.takeRequest();
                     System.out.println("occupy this device with this request");
                     occupyDevice(devices, request, queue, t, deviceDelay);
+                    nextReleaseIsKnown = true;
                 }
+                report.register(new Event(t, EventType.DEVICE, deviceNumber), nextReleaseIsKnown);
             }
         }
+        report.close();
     }
 
     private static PriorityQueue<Event> initQueue(int sourcesCount, double sourceDelay) {
