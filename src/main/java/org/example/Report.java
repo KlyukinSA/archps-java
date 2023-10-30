@@ -13,8 +13,9 @@ public class Report {
     private int rejectsCount;
     private final BufferedWriter calendarWriter;
     private List<ReportBufferElement> buffer;
+    private List<CalendarRow> calendarRows;
 
-    public Report(int bufferSize) {
+    public Report(int bufferSize, List<CalendarRow> calendarRows) {
         this.requestsCount = 0;
         this.rejectsCount = 0;
         try {
@@ -25,6 +26,7 @@ public class Report {
         }
         this.buffer = new ArrayList<>(Collections.nCopies(bufferSize,
                 new ReportBufferElement(0, 0, 0)));
+        this.calendarRows = calendarRows;
     }
 
     public void register(Event event, boolean nextEventIsKnown) { // ОД1 — календарь событий, буфер и текущее состояние
@@ -35,7 +37,11 @@ public class Report {
         if (event.type() != EventType.END_OF_MODELING) {
             causer += event.causer();
         }
-        List<String> list = Arrays.asList(causer, String.format("%.1f", event.time()), String.valueOf(nextEventIsKnown ? 0 : 1), String.valueOf(requestsCount), String.valueOf(rejectsCount));
+        List<String> list = Arrays.asList(causer, String.format("%.1f", event.time()),
+                String.valueOf(nextEventIsKnown ? 0 : 1), String.valueOf(requestsCount), String.valueOf(rejectsCount));
+        calendarRows.add(new CalendarRow(causer, String.format("%.1f", event.time()), String.valueOf(nextEventIsKnown ? 0 : 1),
+                String.valueOf(requestsCount), String.valueOf(rejectsCount)));
+
         try {
             calendarWriter.write(String.join(",", list) + "\n");
         } catch (IOException e) {
