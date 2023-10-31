@@ -35,8 +35,6 @@ public class Report {
     public void register(Event event, boolean nextEventIsKnown) { // ОД1 — календарь событий, буфер и текущее состояние
         if (event.type() == EventType.SOURCE) {
             requestsCount++;
-        } else if (event.type() == EventType.END_OF_MODELING) {
-            endTime = event.time();
         }
 
         String causer = event.type().toString();
@@ -53,13 +51,18 @@ public class Report {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        if (event.type() == EventType.END_OF_MODELING) {
+            endTime = event.time();
+            close();
+        }
     }
 
     public void markReject() {
         rejectsCount++;
     }
 
-    public void close() {
+    private void close() {
         try {
             calendarWriter.close();
         } catch (IOException e) {

@@ -30,20 +30,6 @@ public class Main extends Application {
         Button stepButton = new Button("make event step");
         stepButton.setOnAction((e) -> system.makeEvent());
 
-        Button reportButton = new Button("save reports");
-        reportButton.setOnAction((e) -> {
-            report.close();
-
-            stepButton.setVisible(false);
-
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information Dialog");
-            alert.setHeaderText(null);
-            alert.setContentText("see reports in csv files in current dir");
-            alert.showAndWait();
-            reportButton.setVisible(false);
-        });
-
         Button runButton = new Button("run the simulation to completion");
         runButton.setOnAction((e) -> {
             stepButton.setVisible(false);
@@ -69,7 +55,7 @@ public class Main extends Application {
         rejectsCountCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getRejectsCount()));
         table.getColumns().add(rejectsCountCol);
 
-        FlowPane root = new FlowPane(table, stepButton, reportButton, runButton);
+        FlowPane root = new FlowPane(table, stepButton, runButton);
 
         Scene scene = new Scene(root, 3000, 3000);
 
