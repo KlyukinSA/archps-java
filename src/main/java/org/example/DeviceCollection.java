@@ -34,7 +34,9 @@ public class DeviceCollection {
         }
     }
 
-    public void freeAt(int i) {
-        devices.set(i, new EventHolder(false, devices.get(i).request()));
+    public Event freeAt(int i) {
+        Event request = devices.get(i).request();
+        devices.set(i, new EventHolder(false, request));
+        return request;
     }
 }

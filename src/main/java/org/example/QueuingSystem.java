@@ -42,11 +42,11 @@ public class QueuingSystem {
             } else if (buffer.hasPlace()) {
                 System.out.println("occupy buffer");
                 int pos = buffer.put(event);
-                report.updateBuffer(pos, event);
+                report.markPutInBuffer(pos, event);
             } else {
                 System.out.println("reject!");
-                report.markReject();
                 Event rejected = buffer.reject(event);
+                report.markReject(rejected, t);
                 System.out.println(rejected);
             }
         } else {
@@ -57,9 +57,10 @@ public class QueuingSystem {
             boolean nextDeviceReleaseTimeIsKnown = false;
             if (buffer.hasRequest()) {
                 System.out.println("take new request from buffer");
-                Event request = buffer.takeRequest();
+                Event request1 = buffer.takeRequest();
+                report.markLeaveBuffer(request1, t);
                 System.out.println("occupy this device with this request");
-                occupyDevice(devices, request, queue, t);
+                occupyDevice(devices, request1, queue, t);
                 nextDeviceReleaseTimeIsKnown = true;
             }
             report.register(event, nextDeviceReleaseTimeIsKnown);
@@ -78,7 +79,7 @@ public class QueuingSystem {
     private void occupyDevice(DeviceCollection devices, Event request, PriorityQueue<Event> queue, double t) {
         int dev = devices.occupyOneWith(request);
         double delay = getNextDelay(configuration.deviceDelay);
-        report.addTimeToDevice(dev, delay);
+        report.markOccupyDevice(dev, delay, request, t);
         queue.add(new Event(t + delay, EventType.DEVICE, dev)); // ПЗ1 — экспоненциальный закон распределения времени обслуживания
     }
 

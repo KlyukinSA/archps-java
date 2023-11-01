@@ -24,7 +24,7 @@ public class Main extends Application {
     public void start(Stage stage) {
         ObservableList<CalendarRow> people = FXCollections.observableArrayList();
         SystemConfiguration configuration = new SystemConfiguration();
-        Report report = new Report(configuration.bufferSize, configuration.devicesCount, people);
+        Report report = new Report(configuration, people);
         QueuingSystem system = new QueuingSystem(configuration, report);
 
         Button stepButton = new Button("make event step");
