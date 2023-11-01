@@ -16,7 +16,7 @@ public class QueuingSystem {
         this.report = report;
         this.devices = new DeviceCollection(configuration.devicesCount);
         this.buffer = new Buffer(configuration.bufferSize);
-        this.queue = initQueue(configuration.sourcesCount, configuration.sourceDelay);
+        this.queue = initQueue(configuration.sourcesCount, configuration.sourceDelay, report);
     }
 
     public boolean makeEvent() {
@@ -32,9 +32,10 @@ public class QueuingSystem {
         if (event.type() == EventType.SOURCE) {
             int sourceNumber = event.causer();
             System.out.println("accept request from " + sourceNumber);
-            report.register(event, true);
-            if (t < 500) {
-                queue.add(new Event(t + configuration.sourceDelay, EventType.SOURCE, sourceNumber)); // ИЗ2 — равномерный закон распределения
+            if (report.getRequestsCount() < configuration.requestsCount) {
+                Event next = new Event(t + configuration.sourceDelay, EventType.SOURCE, sourceNumber); // ИЗ2 — равномерный закон распределения
+                queue.add(next);
+                report.register(next, true);
             }
             if (devices.hasFreeDevice()) {
                 System.out.println("immediately occupy the device");
@@ -68,10 +69,12 @@ public class QueuingSystem {
         return true;
     }
 
-    private PriorityQueue<Event> initQueue(int sourcesCount, double sourceDelay) {
+    private PriorityQueue<Event> initQueue(int sourcesCount, double sourceDelay, Report report) {
         PriorityQueue<Event> queue = new PriorityQueue<>(Comparator.comparingDouble(Event::time));
         for (int i = 0; i < sourcesCount; i++) {
-            queue.add(new Event(getNextDelay(sourceDelay), EventType.SOURCE, i));
+            Event event = new Event(getNextDelay(sourceDelay), EventType.SOURCE, i);
+            queue.add(event);
+            report.register(event, true);
         }
         return queue;
     }

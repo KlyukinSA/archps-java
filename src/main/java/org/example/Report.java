@@ -159,4 +159,7 @@ public class Report {
         sourceStats.time += t + delay - request.time();
     }
 
+    public Integer getRequestsCount() {
+        return requestsCount;
+    }
 }

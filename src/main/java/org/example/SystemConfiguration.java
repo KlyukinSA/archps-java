@@ -8,4 +8,6 @@ public class SystemConfiguration {
     double deviceDelay = 250;
 
     int bufferSize = 3;
+
+    int requestsCount = 20;
 }
