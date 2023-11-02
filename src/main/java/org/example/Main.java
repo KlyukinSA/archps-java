@@ -1,5 +1,7 @@
 package org.example;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import javafx.application.Application;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -20,7 +22,9 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
         ObservableList<CalendarRow> people = FXCollections.observableArrayList();
-        SystemConfiguration configuration = new SystemConfiguration();
+
+        SystemConfiguration configuration = initConfigurationWithFile();
+
         Report report = new Report(configuration, people);
         QueuingSystem system = new QueuingSystem(configuration, report);
 
@@ -37,13 +41,14 @@ public class Main extends Application {
 
         Button nButton = new Button("run the simulation n times, find n");
         nButton.setOnAction((e) -> {
-            configuration.requestsCount = 100;
-            double p = runNewSystem(configuration);
+            SystemConfiguration conf = initConfigurationWithFile();
+            conf.requestsCount = 100;
+            double p = runNewSystem(conf);
             double p0 = p;
             double N = 1.643 * 1.643 * (1 - p) / (p * 0.1 * 0.1);
             while (true) {
-                configuration.requestsCount = (int) N;
-                double p2 = runNewSystem(configuration);
+                conf.requestsCount = (int) N;
+                double p2 = runNewSystem(conf);
                 if (p2 < 0.00001) {
                     label.setText("p < 0.00001");
                     break;
@@ -91,6 +96,23 @@ public class Main extends Application {
         stage.setScene(scene);
         stage.setTitle("TableView in JavaFX");
         stage.show();
+    }
+
+    private static SystemConfiguration initConfigurationWithFile() {
+        SystemConfiguration configuration = new SystemConfiguration();
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        String name = "system-conf.yaml";
+        try {
+            File f = new File(name);
+            if (!f.exists()) {
+                mapper.writeValue(f, configuration);
+            } else {
+                configuration = mapper.readValue(f, SystemConfiguration.class);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return configuration;
     }
 
     private double runNewSystem(SystemConfiguration configuration) {
