@@ -48,9 +48,10 @@ public class Report {
         }
         List<String> list = Arrays.asList(causer, String.format("%.1f", event.time()),
                 String.valueOf(nextEventIsKnown ? 0 : 1), String.valueOf(requestsCount), String.valueOf(rejectsCount));
-        calendarRows.add(new CalendarRow(causer, String.format("%.1f", event.time()), String.valueOf(nextEventIsKnown ? 0 : 1),
-                String.valueOf(requestsCount), String.valueOf(rejectsCount)));
-
+        if (calendarRows != null) {
+            calendarRows.add(new CalendarRow(causer, String.format("%.1f", event.time()), String.valueOf(nextEventIsKnown ? 0 : 1),
+                    String.valueOf(requestsCount), String.valueOf(rejectsCount)));
+        }
         try {
             calendarWriter.write(String.join(",", list) + "\n");
         } catch (IOException e) {
@@ -131,7 +132,7 @@ public class Report {
             writer.write("position,time,sourceNumber,requestNumber\n");
             for (int i = 0; i < buffer.size(); i++) {
                 ReportBufferElement element = buffer.get(i);
-                List<String> list = Arrays.asList(String.valueOf(i + 1), String.format("%.1f", element.time()), String.valueOf(element.sourceNumber()), String.valueOf(element.requestNumber()));
+                    List<String> list = Arrays.asList(String.valueOf(i + 1), String.format("%.1f", element.time()), String.valueOf(element.sourceNumber()), String.valueOf(element.requestNumber()));
                 writer.write(String.join(",", list) + "\n");
             }
             writer.close();
@@ -161,5 +162,9 @@ public class Report {
 
     public Integer getRequestsCount() {
         return requestsCount;
+    }
+
+    public double getRejectProbability() {
+        return sources.stream().mapToDouble(s -> s.rejectsCount / (double) s.requestsCount).sum() / sources.size();
     }
 }

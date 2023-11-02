@@ -34,7 +34,6 @@ public class Buffer {
     }
 
     public Event takeRequest() { // Д2Б5 — приоритет по номеру источника, заявки в пакете
-        System.out.println("\t\t\t\t\t\t\t" + elements.stream().filter(EventHolder::isOccupied).map(d -> d.request().causer()).toList());
         if (elements.stream().filter(EventHolder::isOccupied).noneMatch(d -> d.request().causer() == batchPriority)) {
             batchPriority = elements.stream().filter(EventHolder::isOccupied).min(Comparator.comparingInt(d -> d.request().causer())).get().request().causer();
         }
@@ -43,7 +42,6 @@ public class Buffer {
             EventHolder eventHolder1 = elements.get(i);
             if (eventHolder1.isOccupied() && eventHolder1.request().causer() == batchPriority) {
                 elements.set(i, new EventHolder(false, eventHolder1.request()));
-                System.out.println("\t\t\t\t\t\t\t" + eventHolder1.request());
                 return eventHolder1.request();
             }
         }
@@ -51,7 +49,6 @@ public class Buffer {
     }
 
     public Event reject(Event event) {
-        System.out.println("\t\t\t\t\t\t\t" + event + "\t" + elements.stream().filter(EventHolder::isOccupied).map(EventHolder::request).map(Event::causer).toList());
         Event max = Stream.concat(elements.stream().filter(EventHolder::isOccupied).map(EventHolder::request), Stream.of(event))
                 .max(Comparator.comparingInt(Event::causer)).get();
         if (max.equals(event)) {

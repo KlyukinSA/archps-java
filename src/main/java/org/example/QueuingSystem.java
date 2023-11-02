@@ -21,46 +21,36 @@ public class QueuingSystem {
 
     public boolean makeEvent() {
         if (queue.isEmpty()) {
-            System.out.println("stop");
             report.register(new Event(currentTime, EventType.END_OF_MODELING, 0), false);
             return false;
         }
         Event event = queue.poll();
         double t = event.time();
         currentTime = t;
-        System.out.println("event " + event);
         if (event.type() == EventType.SOURCE) {
             int sourceNumber = event.causer();
-            System.out.println("accept request from " + sourceNumber);
             if (report.getRequestsCount() < configuration.requestsCount) {
                 Event next = new Event(t + configuration.sourceDelay, EventType.SOURCE, sourceNumber); // ИЗ2 — равномерный закон распределения
                 queue.add(next);
                 report.register(next, true);
             }
             if (devices.hasFreeDevice()) {
-                System.out.println("immediately occupy the device");
                 occupyDevice(devices, event, queue, t);
             } else if (buffer.hasPlace()) {
-                System.out.println("occupy buffer");
                 int pos = buffer.put(event);
                 report.markPutInBuffer(pos, event);
             } else {
-                System.out.println("reject!");
                 Event rejected = buffer.reject(event);
                 report.markReject(rejected, t);
-                System.out.println(rejected);
             }
         } else {
             assert event.type() == EventType.DEVICE;
             int deviceNumber = event.causer();
-            System.out.println("free device " + deviceNumber);
             devices.freeAt(deviceNumber);
             boolean nextDeviceReleaseTimeIsKnown = false;
             if (buffer.hasRequest()) {
-                System.out.println("take new request from buffer");
                 Event request1 = buffer.takeRequest();
                 report.markLeaveBuffer(request1, t);
-                System.out.println("occupy this device with this request");
                 occupyDevice(devices, request1, queue, t);
                 nextDeviceReleaseTimeIsKnown = true;
             }
