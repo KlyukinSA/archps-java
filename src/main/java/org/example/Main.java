@@ -83,7 +83,7 @@ public class Main extends Application {
 
         FlowPane root = new FlowPane(label, table, stepButton, runButton, nButton);
 
-        Scene scene = new Scene(root, 3000, 3000);
+        Scene scene = new Scene(root, 1000, 700);
 
 //        scene.getStylesheets().add("https://raw.githubusercontent.com/antoniopelusi/JavaFX-Dark-Theme/main/style.css"); // "https://github.com/antoniopelusi/JavaFX-Dark-Theme/blob/main/style.css"
         File style = new File("src/main/resources/style.css");
