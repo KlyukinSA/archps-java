@@ -14,8 +14,9 @@ public class Report {
     private final List<Double> devices;
     private double endTime;
     private final List<SourceStats> sources;
+    private SystemConfiguration systemConfiguration;
 
-    public Report(SystemConfiguration configuration, List<CalendarRow> calendarRows) {
+    public Report(SystemConfiguration configuration, List<CalendarRow> calendarRows, List<ReportBufferElement> buffer) {
         this.requestsCount = 0;
         this.rejectsCount = 0;
         try {
@@ -24,15 +25,26 @@ public class Report {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        this.buffer = new ArrayList<>(Collections.nCopies(configuration.bufferSize,
-                new ReportBufferElement(0, 0, 0)));
-        this.calendarRows = calendarRows;
+        this.buffer = buffer;
+        this.calendarRows = initCalendarRows(configuration, calendarRows);
+        updateMinimal(0);
         this.devices = new ArrayList<>(Collections.nCopies(configuration.devicesCount, .0));
 
         this.sources = new ArrayList<>(Collections.nCopies(configuration.sourcesCount, null));
         for (int i = 0; i < configuration.sourcesCount; i++) {
             sources.set(i, new SourceStats());
         }
+        this.systemConfiguration = configuration;
+    }
+
+    private List<CalendarRow> initCalendarRows(SystemConfiguration configuration, List<CalendarRow> calendarRows) {
+        for (int i = 0; i < configuration.sourcesCount; i++) {
+            calendarRows.add(new CalendarRow("source" + (i + 1), "0", "0", "", "", false));
+        }
+        for (int i = 0; i < configuration.devicesCount; i++) {
+            calendarRows.add(new CalendarRow("device" + (i + 1), "0", "1", "", "", false));
+        }
+        return calendarRows;
     }
 
     public void register(Event event, boolean nextEventIsKnown) { // ОД1 — календарь событий, буфер и текущее состояние
@@ -40,6 +52,13 @@ public class Report {
             requestsCount++;
             SourceStats sourceStats = sources.get(event.causer());
             sourceStats.requestsCount++;
+            updateSourceView(event, sourceStats);
+        } else if (event.type() == EventType.DEVICE) {
+            int index = event.causer() + systemConfiguration.sourcesCount;
+            CalendarRow calendarRow = calendarRows.get(index);
+            calendarRow.setTag(String.valueOf(nextEventIsKnown ? 0 : 1));
+            updateMinimal(index);
+            calendarRows.set(index, calendarRow);
         }
 
         String causer = event.type().toString();
@@ -48,10 +67,6 @@ public class Report {
         }
         List<String> list = Arrays.asList(causer, String.format("%.1f", event.time()),
                 String.valueOf(nextEventIsKnown ? 0 : 1), String.valueOf(requestsCount), String.valueOf(rejectsCount));
-        if (calendarRows != null) {
-            calendarRows.add(new CalendarRow(causer, String.format("%.1f", event.time()), String.valueOf(nextEventIsKnown ? 0 : 1),
-                    String.valueOf(requestsCount), String.valueOf(rejectsCount)));
-        }
         try {
             calendarWriter.write(String.join(",", list) + "\n");
         } catch (IOException e) {
@@ -62,6 +77,28 @@ public class Report {
             endTime = event.time();
             close();
         }
+    }
+
+    private void updateMinimal(int index) {
+        calendarRows.get(index).setMinimal(false);
+        double min = calendarRows.stream().filter(r -> r.getTag().equals("0")).mapToDouble(r -> Double.parseDouble(r.getTime())).min().getAsDouble();
+        for (int i = 0; i < calendarRows.size(); i++) {
+            double current = Double.parseDouble(calendarRows.get(i).getTime());
+            if (Math.abs(min - current) < 0.0001 && calendarRows.get(i).getTag().equals("0")) {
+                calendarRows.get(i).setMinimal(true);
+                calendarRows.set(i, calendarRows.get(i));
+            }
+        }
+    }
+
+    private void updateSourceView(Event event, SourceStats sourceStats) {
+        int index = event.causer();
+        CalendarRow calendarRow = calendarRows.get(index);
+        calendarRow.setRequestsCount(String.valueOf(sourceStats.requestsCount));
+        calendarRow.setRejectsCount(String.valueOf(sourceStats.rejectsCount));
+        calendarRow.setTime(String.valueOf(event.time()));
+        updateMinimal(index);
+        calendarRows.set(index, calendarRow);
     }
 
     public void markReject(Event rejected, double t) {
@@ -87,7 +124,7 @@ public class Report {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter("sources.csv"));
             writer.write("sourceNumber,requestsCount,rejectProbability,time,bufferTime,servicingTime,bufferDispersion,servicingDispersion\n");
-            for (int i = 0; i < buffer.size(); i++) {
+            for (int i = 0; i < sources.size(); i++) {
                 SourceStats stats = sources.get(i);
                 double averageTimeInSystem = stats.time / stats.requestsCount;
                 double averageBufferTime = stats.bufferTimes.stream().mapToDouble(Double::doubleValue).sum() / stats.requestsCount;
@@ -158,6 +195,13 @@ public class Report {
         SourceStats sourceStats = sources.get(pos);
         sourceStats.servicingTimes.add(delay);
         sourceStats.time += t + delay - request.time();
+
+        int index = dev + systemConfiguration.sourcesCount;
+        CalendarRow calendarRow = calendarRows.get(index);
+        calendarRow.setTime(String.valueOf(t + delay));
+        calendarRow.setTag(String.valueOf(0));
+        updateMinimal(index);
+        calendarRows.set(index, calendarRow);
     }
 
     public Integer getRequestsCount() {

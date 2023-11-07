@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 
 public class Main extends Application {
     public static void main(String[] args) {
@@ -21,11 +22,13 @@ public class Main extends Application {
 
     @Override
     public void start(Stage stage) {
-        ObservableList<CalendarRow> people = FXCollections.observableArrayList();
+        ObservableList<CalendarRow> calendarViewList = FXCollections.observableArrayList();
 
         SystemConfiguration configuration = initConfigurationWithFile();
 
-        Report report = new Report(configuration, people);
+        ObservableList<ReportBufferElement> bufferViewList = initBufferView(configuration);
+
+        Report report = new Report(configuration, calendarViewList, bufferViewList);
         QueuingSystem system = new QueuingSystem(configuration, report);
 
         Button stepButton = new Button("make event step");
@@ -62,28 +65,45 @@ public class Main extends Application {
             label.setText(String.format("%1.2f", p) + "\t" + String.format("%5.0f", N));
         });
 
-        TableView<CalendarRow> table = new TableView<>(people);
-        table.setPrefSize(700, 500);
+        TableView<CalendarRow> calendarTable = new TableView<>(calendarViewList);
 
         TableColumn<CalendarRow, String> causerCol = new TableColumn<>("causer");
         causerCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getCauser()));
-        table.getColumns().add(causerCol);
+        calendarTable.getColumns().add(causerCol);
         TableColumn<CalendarRow, String> timeCol = new TableColumn<>("time");
         timeCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getTime()));
-        table.getColumns().add(timeCol);
+        calendarTable.getColumns().add(timeCol);
+        TableColumn<CalendarRow, String> min = new TableColumn<>("is min of tag 0s");
+        min.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().isMinimal() ? "true" : ""));
+        calendarTable.getColumns().add(min);
         TableColumn<CalendarRow, String> tagCol = new TableColumn<>("tag");
         tagCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getTag()));
-        table.getColumns().add(tagCol);
+        calendarTable.getColumns().add(tagCol);
         TableColumn<CalendarRow, String> requestsCountCol = new TableColumn<>("requestsCount");
         requestsCountCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getRequestsCount()));
-        table.getColumns().add(requestsCountCol);
+        calendarTable.getColumns().add(requestsCountCol);
         TableColumn<CalendarRow, String> rejectsCountCol = new TableColumn<>("rejectsCount");
         rejectsCountCol.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(itemData.getValue().getRejectsCount()));
-        table.getColumns().add(rejectsCountCol);
+        calendarTable.getColumns().add(rejectsCountCol);
 
-        FlowPane root = new FlowPane(label, table, stepButton, runButton, nButton);
+        TableView<ReportBufferElement> bufferTable = new TableView<>(bufferViewList);
 
-        Scene scene = new Scene(root, 1000, 700);
+        TableColumn<ReportBufferElement, String> timeCol2 = new TableColumn<>("time");
+        timeCol2.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(String.valueOf(itemData.getValue().time())));
+        bufferTable.getColumns().add(timeCol2);
+        TableColumn<ReportBufferElement, String> sourceNumberCol2 = new TableColumn<>("sourceNumber");
+        sourceNumberCol2.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(String.valueOf(itemData.getValue().sourceNumber())));
+        bufferTable.getColumns().add(sourceNumberCol2);
+        TableColumn<ReportBufferElement, String> requestNumberCol2 = new TableColumn<>("requestNumber");
+        requestNumberCol2.setCellValueFactory(itemData -> new ReadOnlyStringWrapper(String.valueOf(itemData.getValue().requestNumber())));
+        bufferTable.getColumns().add(requestNumberCol2);
+
+        calendarTable.setPrefSize(550, 400);
+        bufferTable.setPrefSize(550, 400);
+
+        FlowPane root = new FlowPane(label, calendarTable, bufferTable, stepButton, runButton, nButton);
+
+        Scene scene = new Scene(root, 1100, 700);
 
 //        scene.getStylesheets().add("https://raw.githubusercontent.com/antoniopelusi/JavaFX-Dark-Theme/main/style.css"); // "https://github.com/antoniopelusi/JavaFX-Dark-Theme/blob/main/style.css"
         File style = new File("src/main/resources/style.css");
@@ -96,6 +116,14 @@ public class Main extends Application {
         stage.setScene(scene);
         stage.setTitle("TableView in JavaFX");
         stage.show();
+    }
+
+    private static ObservableList<ReportBufferElement> initBufferView(SystemConfiguration configuration) {
+        ObservableList<ReportBufferElement> objects = FXCollections.observableArrayList();// Collections.nCopies(configuration.bufferSize,
+        for (int i = 0; i < configuration.bufferSize; i++) {
+            objects.add(new ReportBufferElement(0, 0, 0));
+        }
+        return objects;
     }
 
     private static SystemConfiguration initConfigurationWithFile() {
@@ -116,7 +144,7 @@ public class Main extends Application {
     }
 
     private double runNewSystem(SystemConfiguration configuration) {
-        Report report = new Report(configuration, null);
+        Report report = new Report(configuration, new ArrayList<>(), initBufferView(configuration));
         QueuingSystem system = new QueuingSystem(configuration, report);
         while (system.makeEvent()) {}
         return report.getRejectProbability();
