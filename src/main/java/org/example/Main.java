@@ -11,9 +11,14 @@ import javafx.scene.control.*;
 import javafx.scene.layout.FlowPane;
 import javafx.stage.Stage;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class Main extends Application {
     public static void main(String[] args) {
@@ -71,6 +76,25 @@ public class Main extends Application {
                     "\n fits: " + (p < 0.3 && report1.getAverageTimeInSystem() < 50 && report1.getDeviceUsageRate() > 0.6));
         });
 
+        Button graphButton = new Button("change sourceDelay and see how rejectProbability changes");
+        graphButton.setOnAction((e) -> {
+            SystemConfiguration conf = initConfigurationWithFile();
+            conf.requestsCount = 800;
+            try {
+                BufferedWriter writer = new BufferedWriter(new FileWriter("graph.csv"));
+                writer.write("sourceDelay,rejectProbability\n");
+                for (conf.sourceDelay = 10; conf.sourceDelay < 30; conf.sourceDelay += 0.5) {
+                    double p = runNewSystem(conf).getRejectProbability();
+                    List<String> list = Arrays.asList(String.format("%,.2f", conf.sourceDelay), String.format("%,.2f", p));
+                    writer.write(String.join(";", list) + "\n");
+                }
+                writer.close();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            label.setText("result in graph.csv");
+        });
+
         TableView<CalendarRow> calendarTable = new TableView<>(calendarViewList);
 
         TableColumn<CalendarRow, String> causerCol = new TableColumn<>("causer");
@@ -107,9 +131,9 @@ public class Main extends Application {
         calendarTable.setPrefSize(550, 400);
         bufferTable.setPrefSize(550, 400);
 
-        FlowPane root = new FlowPane(label, calendarTable, bufferTable, stepButton, runButton, nButton);
+        FlowPane root = new FlowPane(label, calendarTable, bufferTable, stepButton, runButton, nButton, graphButton);
 
-        Scene scene = new Scene(root, 1100, 700);
+        Scene scene = new Scene(root, 1500, 700);
 
 //        scene.getStylesheets().add("https://raw.githubusercontent.com/antoniopelusi/JavaFX-Dark-Theme/main/style.css"); // "https://github.com/antoniopelusi/JavaFX-Dark-Theme/blob/main/style.css"
         File style = new File("src/main/resources/style.css");
