@@ -46,12 +46,14 @@ public class Main extends Application {
         nButton.setOnAction((e) -> {
             SystemConfiguration conf = initConfigurationWithFile();
             conf.requestsCount = 100;
-            double p = runNewSystem(conf);
+            Report report1 = runNewSystem(conf);
+            double p = report1.getRejectProbability();
             double p0 = p;
             double N = 1.643 * 1.643 * (1 - p) / (p * 0.1 * 0.1);
             while (true) {
                 conf.requestsCount = (int) N;
-                double p2 = runNewSystem(conf);
+                report1 = runNewSystem(conf);
+                double p2 = report1.getRejectProbability();
                 if (p2 < 0.00001) {
                     label.setText("p < 0.00001");
                     break;
@@ -62,7 +64,11 @@ public class Main extends Application {
                 }
                 p = p2;
             }
-            label.setText(String.format("%1.2f", p) + "\t" + String.format("%5.0f", N));
+            label.setText("N = " + String.format("%.0f", N) +
+                    "\n RejectProbability = " + String.format("%1.2f", p) +
+                    "\n AverageTimeInSystem = " + String.format("%.2f", report1.getAverageTimeInSystem()) +
+                    "\n DeviceUsageRate = " + String.format("%1.2f", report1.getDeviceUsageRate()) +
+                    "\n fits: " + (p < 0.3 && report1.getAverageTimeInSystem() < 50 && report1.getDeviceUsageRate() > 0.6));
         });
 
         TableView<CalendarRow> calendarTable = new TableView<>(calendarViewList);
@@ -143,11 +149,11 @@ public class Main extends Application {
         return configuration;
     }
 
-    private double runNewSystem(SystemConfiguration configuration) {
+    private Report runNewSystem(SystemConfiguration configuration) {
         Report report = new Report(configuration, new ArrayList<>(), initBufferView(configuration));
         QueuingSystem system = new QueuingSystem(configuration, report);
         while (system.makeEvent()) {}
-        return report.getRejectProbability();
+        return report;
     }
 
 }

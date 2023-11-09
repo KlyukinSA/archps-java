@@ -204,11 +204,32 @@ public class Report {
         calendarRows.set(index, calendarRow);
     }
 
-    public Integer getRequestsCount() {
+    public int getRequestsCount() {
         return requestsCount;
     }
 
     public double getRejectProbability() {
-        return sources.stream().mapToDouble(s -> s.rejectsCount / (double) s.requestsCount).sum() / sources.size();
+//        return sources.stream().mapToDouble(s -> s.rejectsCount / (double) s.requestsCount).sum() / sources.size();
+        return rejectsCount / (double) requestsCount;
+    }
+
+//    public double getEndTime() {
+//        return endTime;
+//    }
+
+    public double getAverageTimeInSystem() {
+//        System.out.println(systemConfiguration.requestsCount);
+//        System.out.println(requestsCount);
+//        System.out.println(sources.stream().mapToInt(s -> s.requestsCount).sum());
+//        System.out.println("");
+//        System.out.println(endTime);
+//        System.out.println(sources.stream().mapToDouble(s -> s.time).sum());
+//        System.out.println("");
+        return sources.stream().mapToDouble(s -> s.time / s.requestsCount).sum() / sources.size();
+//        return endTime / requestsCount;
+    }
+
+    public double getDeviceUsageRate() {
+        return devices.stream().mapToDouble(Double::doubleValue).sum() / endTime / devices.size();
     }
 }

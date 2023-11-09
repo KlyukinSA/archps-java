@@ -30,7 +30,7 @@ public class QueuingSystem {
         if (event.type() == EventType.SOURCE) {
             int sourceNumber = event.causer();
             if (report.getRequestsCount() < configuration.requestsCount) {
-                Event next = new Event(t + configuration.sourceDelay, EventType.SOURCE, sourceNumber); // ИЗ2 — равномерный закон распределения
+                Event next = new Event(t + getNextSourceDelay(configuration.sourceDelay), EventType.SOURCE, sourceNumber); // ИЗ2 — равномерный закон распределения
                 queue.add(next);
                 report.register(next, true);
             }
@@ -62,7 +62,7 @@ public class QueuingSystem {
     private PriorityQueue<Event> initQueue(int sourcesCount, double sourceDelay, Report report) {
         PriorityQueue<Event> queue = new PriorityQueue<>(Comparator.comparingDouble(Event::time));
         for (int i = 0; i < sourcesCount; i++) {
-            Event event = new Event(getNextDelay(sourceDelay), EventType.SOURCE, i);
+            Event event = new Event(getNextSourceDelay(sourceDelay), EventType.SOURCE, i);
             queue.add(event);
             report.register(event, true);
         }
@@ -71,12 +71,15 @@ public class QueuingSystem {
 
     private void occupyDevice(DeviceCollection devices, Event request, PriorityQueue<Event> queue, double t) {
         int dev = devices.occupyOneWith(request);
-        double delay = getNextDelay(configuration.deviceDelay);
+        double delay = getNextDeviceDelay(configuration.deviceDelay);
         report.markOccupyDevice(dev, delay, request, t);
         queue.add(new Event(t + delay, EventType.DEVICE, dev)); // ПЗ1 — экспоненциальный закон распределения времени обслуживания
     }
 
-    private double getNextDelay(double average) {
+    private double getNextDeviceDelay(double average) {
         return -1 * average * Math.log(Math.random());
+    }
+    private double getNextSourceDelay(double average) {
+        return average * 2 * Math.random();
     }
 }
